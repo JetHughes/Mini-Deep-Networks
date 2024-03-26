@@ -176,58 +176,43 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
             mode='max',
             save_best_only=True)
 
-        # if data_aug:
-        #     # Read the number of training points - len on numpy array returns the number of rows...
-        #     # should be 50000 for oxford102 dataset
-        #     N = len(x_train)
-        #     # Specify the number of points to use for validation
-        #     N_valid = int(N*0.33)
+        if data_aug:
 
-        #     # Generate a list of randomly ordered indexes from 0 to N-1
-        #     I = np.random.permutation(N)
+            # Crate data generator that randomly manipulates images
+            datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+                zca_epsilon=1e-06,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                fill_mode='nearest',
+                horizontal_flip=True
+            )
 
-        #     # Select the validation inputs and the corresponding labels
-        #     x_valid = x_train[I[:N_valid]]
-        #     y_hat_valid = y_hat_train[I[:N_valid]]
+            # Configure the data generator for the images in the training sets
+            datagen.fit(x_train)
 
-        #     # Select the training input and the corresponding labels
-        #     x_train = x_train[I[N_valid:]]
-        #     y_hat_train = y_hat_train[I[N_valid:]]
+            # Build the data generator
+            train_data_aug = datagen.flow(x_train, y_hat_train)
 
-        #     # Crate data generator that randomly manipulates images
-        #     datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-        #         zca_epsilon=1e-06,
-        #         width_shift_range=0.1,
-        #         height_shift_range=0.1,
-        #         fill_mode='nearest',
-        #         horizontal_flip=True
-        #     )
+            # if verbose:
+            #     for x_batch, y_hat_batch in datagen.flow(x_train_sample, y_hat_train_sample, shuffle=False):
+            #         show_methods.show_data_images(images=x_batch.astype('uint8'), labels=y_hat_batch, class_names=class_names,
+            #                                       blocking=False)
+            #         break
 
-        #     # Configure the data generator for the images in the training sets
-        #     datagen.fit(x_train)
-
-        #     # Build the data generator
-        #     train_data_aug = datagen.flow(x_train, y_hat_train)
-
-        #     if verbose:
-        #         for x_batch, y_hat_batch in datagen.flow(x_train_sample, y_hat_train_sample, shuffle=False):
-        #             show_methods.show_data_images(images=x_batch.astype('uint8'), labels=y_hat_batch, class_names=class_names,
-        #                                           blocking=False)
-        #             break
-
-        #     # Train the model for 50 epochs, using 33% of the data for validation measures,
-        #     # shuffle the data into different batches after every epoch, include the checkpoint
-        #     # callback that will save the best model
-        #     train_info = net.fit(train_data_aug,
-        #                          validation_data=(x_valid, y_hat_valid),
-        #                          epochs=50, shuffle=True,
-        #                          callbacks=[model_checkpoint_callback])
-        # else:
             # Train the model for 50 epochs, using 33% of the data for validation measures,
             # shuffle the data into different batches after every epoch, include the checkpoint
             # callback that will save the best model
-        train_info = net.fit(x_train, y_hat_train, validation_split=0.33,  epochs=50, shuffle=True,
-                                callbacks=[model_checkpoint_callback])
+            train_info = net.fit(train_data_aug,
+                                 validation_data=(x_valid, y_hat_valid),
+                                 epochs=50, shuffle=True,
+                                 callbacks=[model_checkpoint_callback])
+        else:
+            # Train the model for 50 epochs, using 33% of the data for validation measures,
+            # shuffle the data into different batches after every epoch, include the checkpoint
+            # callback that will save the best model
+            train_info = net.fit(x_train, y_hat_train, validation_data=(x_valid, y_hat_valid),
+                                 epochs=50, shuffle=True,
+                                 callbacks=[model_checkpoint_callback])
 
         # Load the weights of the best model
         print("Loading best save weight from %s..." % checkpoint_save_name)
@@ -283,4 +268,4 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
 
 if __name__ == "__main__":
     oxford102_trained_cnn(load_from_file=False, verbose=True,
-                        reg_wdecay_beta=0.1, reg_dropout_rate=0.4, reg_batch_norm=True, data_aug=False)
+                        reg_wdecay_beta=0.1, reg_dropout_rate=0.4, reg_batch_norm=True, data_aug=True)
