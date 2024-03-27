@@ -18,3 +18,6 @@ first attempt:
 - added regularisation the same as in example 4 -> `vgg_net_small_with_regularization`
 - 93/74 after 150 epochs
 - balanced accuracy 68
+
+27/03
+- 
