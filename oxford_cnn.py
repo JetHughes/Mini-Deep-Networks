@@ -9,22 +9,15 @@ import show_methods
 import os
 import pickle
 import gzip
+from keras import metrics
 from load_oxford_flowers102 import load_oxford_flowers102
+import nets
+from utils import balanced_accuracy
 
+EPOCHS=150
 
 def oxford102_trained_cnn(load_from_file=False, verbose=True,
                         reg_wdecay_beta=0, reg_dropout_rate=0, reg_batch_norm=False, data_aug=False):
-
-    # # Load the oxford102 dataset
-    # data = tf.keras.datasets.oxford102
-    # class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-    #                'dog', 'frog', 'horse', 'ship', 'truck']
-
-    # (x_train, y_hat_train), (x_test, y_hat_test) = data.load_data()
-    # # Data augmentation does not like shape (N,1) for labels, it must
-    # # be shape (N,)...and the squeeze function removes dimensions of size 1
-    # y_hat_train = np.squeeze(y_hat_train)
-    # y_hat_test = np.squeeze(y_hat_test)
 
     train_data, validation_data, test_data, class_names = load_oxford_flowers102(imsize=96, fine=False)
 
@@ -45,12 +38,6 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
     net_save_name = save_name + '_cnn_net.h5'
     checkpoint_save_name = save_name + '_cnn_net.chk.weights.h5'
     history_save_name = save_name + '_cnn_net.hist'
-    # Show 16 train images with the corresponding labels
-    # if verbose:
-    #     x_train_sample = x_train[:16]
-    #     y_hat_train_sample = y_hat_train[:16]
-    #     show_methods.show_data_images(
-    #         images=x_train_sample, labels=y_hat_train_sample, class_names=class_names, blocking=False)
 
     n_classes = len(class_names)
 
@@ -76,91 +63,25 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
         # * Creating and training a neural network model *
         # ************************************************
 
-        # Create feed-forward network
-        net = tf.keras.models.Sequential()
-
-        # Conv layer 1: 3x3 window, 64 filters - specify the size of the input as 32x32x3
-        net.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same',
-                                       input_shape=(96, 96, 3)))
-
-        # Conv layer 2: 3x3 window, 64 filters
-        net.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        # Conv layer 3: 3x3 window, 64 filters
-        net.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        if reg_batch_norm:
-            # Batch norm layer 1
-            net.add(tf.keras.layers.BatchNormalization())
-
-        # Max pool layer 1: 2x2 window (implicit arguments - padding="valid")
-        net.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-        # Conv layer 4: 3x3 window, 128 filters
-        net.add(tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        # Conv layer 5: 3x3 window, 128 filters
-        net.add(tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        # Conv layer 6: 3x3 window, 128 filters
-        net.add(tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        if reg_batch_norm:
-            # Batch norm layer 2
-            net.add(tf.keras.layers.BatchNormalization())
-
-        # Max pool layer 2: 2x2 window (implicit arguments - padding="valid")
-        net.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-
-        # Conv layer 7: 3x3 window, 256 filters
-        net.add(tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        # Conv layer 8: 3x3 window, 256 filters
-        net.add(tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        # Conv layer 9: 3x3 window, 256 filters
-        net.add(tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3),
-                strides=(1, 1), activation='relu', padding='same'))
-
-        if reg_batch_norm:
-            # Batch norm layer 2
-            net.add(tf.keras.layers.BatchNormalization())
-
-        # Max pool layer 3: 2x2 window (implicit arguments - padding="valid")
-        net.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1)))
-
-        # Flatten layer 1
-        net.add(tf.keras.layers.Flatten())
-
-        if reg_wdecay_beta > 0:
-            reg_wdecay = tf.keras.regularizers.l2(reg_wdecay_beta)
-        else:
-            reg_wdecay = None
-
-        # Dense layer 1: 128 neurons
-        net.add(tf.keras.layers.Dense(
-            units=128, activation='relu', kernel_regularizer=reg_wdecay))
-
-        # Dense layer 2: 512 neurons
-        net.add(tf.keras.layers.Dense(
-            units=512, activation='relu', kernel_regularizer=reg_wdecay))
-
-        if reg_dropout_rate > 0:
-            # Dropout layer 1:
-            net.add(tf.keras.layers.Dropout(reg_dropout_rate))
-
-        # Dense layer 3: n_classes neurons
-        net.add(tf.keras.layers.Dense(units=n_classes, activation='softmax'))
+        # net = example4_net((96, 96, 3), n_classes, reg_dropout_rate, reg_wdecay_beta, reg_batch_norm)
+        net = nets.vgg16_net_small_with_regularisation((96, 96, 3), n_classes, reg_dropout_rate, reg_wdecay_beta, reg_batch_norm)
+        # net = nets.vgg16_net_small((96, 96, 3), n_classes)
 
         # Define training regime: type of optimiser, loss function to optimise and type of error measure to report during
         # training
+        # METRICS = [
+        #     metrics.MeanSquaredError(name='Brier score'),
+        #     metrics.TruePositives(name='tp'),
+        #     metrics.FalsePositives(name='fp'),
+        #     metrics.TrueNegatives(name='tn'),
+        #     metrics.FalseNegatives(name='fn'), 
+        #     metrics.BinaryAccuracy(name='accuracy'),
+        #     metrics.Precision(name='precision'),
+        #     metrics.Recall(name='recall'),
+        #     metrics.AUC(name='auc'),
+        #     metrics.AUC(name='prc', curve='PR'), # precision-recall curve
+        # ]
+
         net.compile(optimizer='adam',
                     loss='sparse_categorical_crossentropy',
                     metrics=['accuracy'])
@@ -178,7 +99,7 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
 
         if data_aug:
 
-            # Crate data generator that randomly manipulates images
+            # Create data generator that randomly manipulates images
             datagen = tf.keras.preprocessing.image.ImageDataGenerator(
                 zca_epsilon=1e-06,
                 width_shift_range=0.1,
@@ -193,25 +114,14 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
             # Build the data generator
             train_data_aug = datagen.flow(x_train, y_hat_train)
 
-            # if verbose:
-            #     for x_batch, y_hat_batch in datagen.flow(x_train_sample, y_hat_train_sample, shuffle=False):
-            #         show_methods.show_data_images(images=x_batch.astype('uint8'), labels=y_hat_batch, class_names=class_names,
-            #                                       blocking=False)
-            #         break
-
-            # Train the model for 50 epochs, using 33% of the data for validation measures,
-            # shuffle the data into different batches after every epoch, include the checkpoint
-            # callback that will save the best model
             train_info = net.fit(train_data_aug,
                                  validation_data=(x_valid, y_hat_valid),
-                                 epochs=50, shuffle=True,
+                                 epochs=EPOCHS, shuffle=True,
                                  callbacks=[model_checkpoint_callback])
         else:
-            # Train the model for 50 epochs, using 33% of the data for validation measures,
-            # shuffle the data into different batches after every epoch, include the checkpoint
-            # callback that will save the best model
-            train_info = net.fit(x_train, y_hat_train, validation_data=(x_valid, y_hat_valid),
-                                 epochs=50, shuffle=True,
+            train_info = net.fit(x_train, y_hat_train, 
+                                 validation_data=(x_valid, y_hat_valid),
+                                 epochs=EPOCHS, shuffle=True,
                                  callbacks=[model_checkpoint_callback])
 
         # Load the weights of the best model
@@ -247,25 +157,21 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
     # *********************************************************
 
     if verbose:
-        loss_train, accuracy_train = net.evaluate(
-            x_train, y_hat_train, verbose=0)
+        # Compute output for 16 test images
+        y_pred = net.predict(x_test)
+
+        loss_train, accuracy_train,  = net.evaluate(x_train, y_hat_train, verbose=0)
         loss_test, accuracy_test = net.evaluate(x_test, y_hat_test, verbose=0)
 
         print("Train accuracy (tf): %.2f" % accuracy_train)
         print("Test accuracy  (tf): %.2f" % accuracy_test)
+        balanced_accuracy(test_labels=y_hat_test, predictions=y_pred, outputs=n_classes)
 
-        # Compute output for 16 test images
-        y_test = net.predict(x_test[:16])
-        y_test = np.argmax(y_test, axis=1)
-
-        # Show true labels and predictions for 16 test images
-        # show_methods.show_data_images(images=x_test[:16],
-        #                               labels=y_hat_test[:16], predictions=y_test,
-        #                               class_names=class_names, blocking=True)
+    net.summary()
 
     return net
 
 
 if __name__ == "__main__":
-    oxford102_trained_cnn(load_from_file=False, verbose=True,
+    oxford102_trained_cnn(load_from_file=True, verbose=True,
                         reg_wdecay_beta=0.1, reg_dropout_rate=0.4, reg_batch_norm=True, data_aug=True)
