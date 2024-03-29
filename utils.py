@@ -1,5 +1,5 @@
 import numpy as np
-def balanced_accuracy(test_labels, predictions, outputs):    
+def balanced_accuracy(test_labels, predictions, outputs, name="balanced accuracy"):    
     # https://github.com/rois-codh/kmnist/pull/14/files/2b063db29fc7aa784a60ba69e13f72db892bf435
     totals = []
     for cls in range(outputs):
@@ -22,4 +22,4 @@ def balanced_accuracy(test_labels, predictions, outputs):
         accuracy = hits[i] / totals[i]
         accuracy_list.append(accuracy)
 
-    print(f'The balanced accuracy is: {np.mean(accuracy_list)}')
+    print(f'The {name} is: {np.mean(accuracy_list)}')

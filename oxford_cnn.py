@@ -67,21 +67,6 @@ def oxford102_trained_cnn(load_from_file=False, verbose=True,
         net = nets.vgg16_net_small_with_regularisation((96, 96, 3), n_classes, reg_dropout_rate, reg_wdecay_beta, reg_batch_norm)
         # net = nets.vgg16_net_small((96, 96, 3), n_classes)
 
-        # Define training regime: type of optimiser, loss function to optimise and type of error measure to report during
-        # training
-        # METRICS = [
-        #     metrics.MeanSquaredError(name='Brier score'),
-        #     metrics.TruePositives(name='tp'),
-        #     metrics.FalsePositives(name='fp'),
-        #     metrics.TrueNegatives(name='tn'),
-        #     metrics.FalseNegatives(name='fn'), 
-        #     metrics.BinaryAccuracy(name='accuracy'),
-        #     metrics.Precision(name='precision'),
-        #     metrics.Recall(name='recall'),
-        #     metrics.AUC(name='auc'),
-        #     metrics.AUC(name='prc', curve='PR'), # precision-recall curve
-        # ]
-
         net.compile(optimizer='adam',
                     loss='sparse_categorical_crossentropy',
                     metrics=['accuracy'])

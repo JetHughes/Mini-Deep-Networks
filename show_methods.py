@@ -75,7 +75,9 @@ def show_data_images(images, labels=None, predictions=None, class_names=None):
 
          titleStr += 'pred: %s' % class_names[predictions[i]]
 
-      plot_handle.set_title(titleStr)
+      plot_handle.set_title(titleStr, fontsize=8)
+   
+   plt.tight_layout()
 
 def show_data_classes(inputs, labels, class_names,mode='pca'):
 

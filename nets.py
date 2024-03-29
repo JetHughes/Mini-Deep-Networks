@@ -1,5 +1,24 @@
 from keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Flatten, Dense, Dropout
 import tensorflow as tf
+import numpy as np
+
+def simple_cnn(input_shape, n_classes, initial_bias=None):
+    net = tf.keras.models.Sequential()
+    net.add(Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same', input_shape=input_shape))
+    net.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    net.add(Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), activation='relu', padding='same'))
+    net.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    net.add(Flatten())
+    net.add(Dense(units=64, activation='relu'))
+
+    if initial_bias is None:
+        #default initial bias is zeroes
+        initial_bias = tf.constant_initializer([0 for i in range(n_classes)])
+    net.add(Dense(units=n_classes, activation='softmax', bias_initializer=initial_bias))
+    net.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
+    return net
 
 def vgg16_net_small_with_regularisation(_input_shape, n_classes, reg_dropout_rate=0, reg_wdecay_beta=0, reg_batch_norm=0):
     net = tf.keras.models.Sequential()
@@ -116,4 +135,6 @@ def example4_net(_input_shape, n_classes, reg_dropout_rate=0, reg_wdecay_beta=0,
     if reg_dropout_rate > 0: 
         net.add(Dropout(reg_dropout_rate))
     net.add(Dense(units=n_classes, activation='softmax'))
+
     return net
+
