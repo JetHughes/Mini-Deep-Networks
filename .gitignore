@@ -1,6 +1,5 @@
 __pycache__/
 data/
 .vscode/
-saved/
 .ipynb_checkpoints/
 train_histories/
